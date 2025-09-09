@@ -45,18 +45,18 @@ SwitchInputMethod(languageID, imeID := 0) {
         }
     }
     
-    ; Show notification
+    ; Show notification with actual hotkey used
     switch languageID {
         case EN_US:
-            ToolTip("Switched to English (US)", , , 1)
+            ToolTip("Switched to English (US) - Hotkey: Ctrl+Win+Alt+1", , , 1)
         case ZH_CN:
-            ToolTip("Switched to 中文 (Chinese Simplified)", , , 1)
+            ToolTip("Switched to 中文 (Chinese Simplified) - Hotkey: Ctrl+Win+Alt+2", , , 1)
         case JA_JP:
-            ToolTip("Switched to 日本語 (Japanese)", , , 1)
+            ToolTip("Switched to 日本語 (Japanese) - Hotkey: Ctrl+Win+Alt+3", , , 1)
     }
     
-    ; Clear tooltip after 1 second
-    SetTimer(() => ToolTip(, , , 1), -1000)
+    ; Clear tooltip after 2 seconds
+    SetTimer(() => ToolTip(, , , 1), -2000)
 }
 
 ; Alternative method using Windows API for IME switching
@@ -125,6 +125,6 @@ SwitchToIME(languageTag) {
 }
 
 ; Status bar notification on startup
-TrayTip("Hotkeys:`nCtrl+Shift+1: English`nCtrl+Shift+2: Chinese`nCtrl+Shift+3: Japanese", "Input Method Switcher")
+TrayTip("Hotkeys:`nCtrl+Win+Alt+1: English`nCtrl+Win+Alt+2: Chinese`nCtrl+Win+Alt+3: Japanese", "Input Method Switcher")
 
 ; Auto-execute section ends here
