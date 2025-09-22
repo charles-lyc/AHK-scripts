@@ -114,11 +114,46 @@ SwitchToEnglishUS() {
     
     hwnd := WinGetID("A")
     hkl := DllCall("LoadKeyboardLayout", "Str", "00000409", "UInt", 0, "Ptr")
-    PostMessage(0x50, 0, hkl, hwnd)
+    try {
+        ; Try the standard way first (may fail with ERROR_ACCESS_DENIED when targeting elevated/UWP windows)
+        PostMessage(0x50, 0, hkl, hwnd)
+        return
+    } catch Error {
+        ; Fallback below
+    }
+
+    ; Fallback 1: safer synchronous send with timeout (won't throw on hung windows)
+    ; SMTO_ABORTIFHUNG (0x0002) | SMTO_BLOCK (0x0001)
+    resultPtr := 0
+    sendOk := DllCall(
+        "SendMessageTimeout",
+        "Ptr", hwnd,
+        "UInt", 0x50,
+        "Ptr", 0,
+        "Ptr", hkl,
+        "UInt", 0x0003,
+        "UInt", 100,
+        "Ptr*", &resultPtr,
+        "UInt"
+    )
+    if (sendOk)
+        return
+
+    ; Fallback 2: attach to the target thread and activate layout directly
+    pid := 0
+    targetTid := DllCall("GetWindowThreadProcessId", "Ptr", hwnd, "UInt*", &pid, "UInt")
+    if (targetTid) {
+        currentTid := DllCall("GetCurrentThreadId", "UInt")
+        if (DllCall("AttachThreadInput", "UInt", currentTid, "UInt", targetTid, "Int", true)) {
+            DllCall("ActivateKeyboardLayout", "Ptr", hkl, "UInt", 0)
+            DllCall("AttachThreadInput", "UInt", currentTid, "UInt", targetTid, "Int", false)
+            return
+        }
+    }
 
     ; debug
-    ToolTip("Switched to English (US)", , , 1)
-    SetTimer(() => ToolTip("", , , 1), -2000)
+    ; ToolTip("Switched to English (US)", , , 1)
+    ; SetTimer(() => ToolTip("", , , 1), -2000)
     
 }
 
@@ -126,6 +161,39 @@ SwitchToEnglishUS() {
 RAlt::{
     UpdateLastInputTime()
     Send("#" . Chr(32))
+}
+
+; Map F13 to Left Ctrl+Left Alt+Left Shift+`
+F13::{
+    UpdateLastInputTime()
+    Send("^!+``")
+}
+
+; F13 Up - no action (empty)
+F13 Up::{
+    ; No action on key release
+}
+
+; Map F14 to switch to Firefox browser
+F14::{
+    UpdateLastInputTime()
+    try {
+        ; Try to activate Firefox window
+        WinActivate("ahk_exe firefox.exe")
+    } catch Error {
+        ; If Firefox is not running, try to start it
+        try {
+            Run("firefox.exe")
+        } catch Error {
+            ; Show error message if Firefox cannot be started
+            TrayTip("无法找到或启动Firefox", "F14键错误")
+        }
+    }
+}
+
+; F14 Up - no action (empty)
+F14 Up::{
+    ; No action on key release
 }
 
 ; Show startup notification
