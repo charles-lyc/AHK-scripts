@@ -163,36 +163,60 @@ RAlt::{
     Send("#" . Chr(32))
 }
 
-; Map F13 to Left Ctrl+Left Alt+Left Shift+`
-F13::{
+; Map F15 to Left Ctrl+Left Alt+Left Shift+`
+F15::{
     UpdateLastInputTime()
     Send("^!+``")
 }
 
-; F13 Up - no action (empty)
-F13 Up::{
+; F15 Up - no action (empty)
+F15 Up::{
     ; No action on key release
 }
 
-; Map F14 to switch to Firefox browser
-F14::{
+; Map F13 to switch to Firefox browser or minimize if already Firefox
+F13::{
     UpdateLastInputTime()
+    
+    ; Get the current active window
     try {
-        ; Try to activate Firefox window
-        WinActivate("ahk_exe firefox.exe")
+        currentWindow := WinGetID("A")
+        currentProcess := WinGetProcessName("A")
+        
+        ; Check if current window is Firefox
+        if (currentProcess = "firefox.exe" && WinGetMinMax("A") != -1) {
+            ; If current window is Firefox, minimize it
+            WinMinimize("A")
+        } else {
+            ; If current window is not Firefox, try to activate Firefox
+            try {
+                WinActivate("ahk_exe firefox.exe")
+            } catch Error {
+                ; If Firefox is not running, try to start it
+                try {
+                    Run("firefox.exe")
+                } catch Error {
+                    ; Show error message if Firefox cannot be started
+                    TrayTip("无法找到或启动Firefox", "F13键错误")
+                }
+            }
+        }
     } catch Error {
-        ; If Firefox is not running, try to start it
+        ; Fallback: try to activate Firefox if we can't get current window info
         try {
-            Run("firefox.exe")
+            WinActivate("ahk_exe firefox.exe")
         } catch Error {
-            ; Show error message if Firefox cannot be started
-            TrayTip("无法找到或启动Firefox", "F14键错误")
+            try {
+                Run("firefox.exe")
+            } catch Error {
+                TrayTip("无法找到或启动Firefox", "F13键错误")
+            }
         }
     }
 }
 
-; F14 Up - no action (empty)
-F14 Up::{
+; F13 Up - no action (empty)
+F13 Up::{
     ; No action on key release
 }
 
