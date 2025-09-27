@@ -112,7 +112,23 @@ ExitFunc(ExitReason, ExitCode) {
 SwitchToEnglishUS() {
     global EN_US_LAYOUT
     
-    hwnd := WinGetID("A")
+    ; Try to get the active window ID with error handling
+    try {
+        hwnd := WinGetID("A")
+    } catch Error {
+        ; If no active window, try to get the foreground window directly
+        try {
+            hwnd := DllCall("GetForegroundWindow", "Ptr")
+            if (hwnd = 0) {
+                ; No foreground window available, skip switching
+                return
+            }
+        } catch Error {
+            ; If all else fails, skip switching
+            return
+        }
+    }
+    
     hkl := DllCall("LoadKeyboardLayout", "Str", "00000409", "UInt", 0, "Ptr")
     try {
         ; Try the standard way first (may fail with ERROR_ACCESS_DENIED when targeting elevated/UWP windows)
@@ -202,14 +218,28 @@ F13::{
             }
         }
     } catch Error {
-        ; Fallback: try to activate Firefox if we can't get current window info
-        try {
-            WinActivate("ahk_exe firefox.exe")
-        } catch Error {
+        ; Check if it's a "Target window not found" error
+        if (InStr(Error, "Target window not found")) {
+            ; No active window available, just try to activate Firefox
             try {
-                Run("firefox.exe")
+                WinActivate("ahk_exe firefox.exe")
             } catch Error {
-                TrayTip("无法找到或启动Firefox", "F13键错误")
+                try {
+                    Run("firefox.exe")
+                } catch Error {
+                    TrayTip("无法找到或启动Firefox", "F13键错误")
+                }
+            }
+        } else {
+            ; Other error, try fallback approach
+            try {
+                WinActivate("ahk_exe firefox.exe")
+            } catch Error {
+                try {
+                    Run("firefox.exe")
+                } catch Error {
+                    TrayTip("无法找到或启动Firefox", "F13键错误")
+                }
             }
         }
     }
