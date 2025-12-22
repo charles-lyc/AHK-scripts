@@ -6,6 +6,8 @@
 ; Global variables
 lastInputTime := A_TickCount
 TIMEOUT_MS := 30000
+LShiftPressTime := 0  ; Track LShift press time for short press detection
+SHORT_PRESS_THRESHOLD := 200  ; Milliseconds threshold for short press
 
 ; English (US) keyboard layout identifier
 EN_US_LAYOUT := 0x04090409
@@ -47,8 +49,8 @@ SetupKeyboardMonitoring() {
     ;     Hotkey("~F" . A_Index . " Up", (*) => UpdateLastInputTime())
     ; }
     
-    ; Modifier keys
-    modifiers := ["LWin", "RWin", "LAlt", "LCtrl", "RCtrl", "LShift", "RShift"]
+    ; Modifier keys (LShift is handled separately for short press detection)
+    modifiers := ["LWin", "RWin", "LAlt", "LCtrl", "RCtrl", "RShift"]
     for modifier in modifiers {
         Hotkey("~" . modifier, (*) => UpdateLastInputTime())
         Hotkey("~" . modifier . " Up", (*) => UpdateLastInputTime())
@@ -173,10 +175,27 @@ SwitchToEnglishUS() {
     
 }
 
-; Map Right Alt to Win+Space (input method switcher)
-RAlt::{
+; Map Left Shift short press to Win+Space (input method switcher)
+; Long press of Left Shift remains unchanged
+; Use ~ prefix to allow original key function to work normally
+~LShift::{
+    global LShiftPressTime
+    LShiftPressTime := A_TickCount
     UpdateLastInputTime()
-    Send("#" . Chr(32))
+}
+
+~LShift Up::{
+    global LShiftPressTime, SHORT_PRESS_THRESHOLD
+    UpdateLastInputTime()
+    
+    ; Calculate how long LShift was held
+    holdTime := A_TickCount - LShiftPressTime
+    
+    ; If it was a short press, trigger Win+Space
+    if (holdTime < SHORT_PRESS_THRESHOLD) {
+        Send("#" . Chr(32))
+    }
+    ; If it was a long press, the normal LShift behavior already happened
 }
 
 ; Map F15 to Left Ctrl+Left Alt+Left Shift+`
