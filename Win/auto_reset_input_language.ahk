@@ -37,7 +37,7 @@ SetupKeyboardMonitoring() {
     ; }
     
     ; Common symbols and special keys
-    symbols := ["Space", "Enter", "Tab", "Backspace", "Delete", "Insert", "Home", "End", "PgUp", "PgDn", "Up", "Down", "Left", "Right", "Esc", "CapsLock", "NumLock", "ScrollLock", "PrintScreen", "Pause"]
+    symbols := ["Space", "Enter", "Tab", "Backspace", "Delete", "Insert", "Home", "End", "PgUp", "PgDn", "Up", "Down", "Left", "Right", "Esc", "NumLock", "ScrollLock", "PrintScreen", "Pause"]
     for symbol in symbols {
         Hotkey("~" . symbol, (*) => UpdateLastInputTime())
         Hotkey("~" . symbol . " Up", (*) => UpdateLastInputTime())
@@ -178,24 +178,30 @@ SwitchToEnglishUS() {
 ; Map Left Shift short press to Win+Space (input method switcher)
 ; Long press of Left Shift remains unchanged
 ; Use ~ prefix to allow original key function to work normally
-~LShift::{
-    global LShiftPressTime
-    LShiftPressTime := A_TickCount
-    UpdateLastInputTime()
-}
+; ~LShift::{
+;     global LShiftPressTime
+;     LShiftPressTime := A_TickCount
+;     UpdateLastInputTime()
+; }
 
-~LShift Up::{
-    global LShiftPressTime, SHORT_PRESS_THRESHOLD
+; ~LShift Up::{
+;     global LShiftPressTime, SHORT_PRESS_THRESHOLD
+;     UpdateLastInputTime()
+    
+;     ; Calculate how long LShift was held
+;     holdTime := A_TickCount - LShiftPressTime
+    
+;     ; If it was a short press, trigger Win+Space
+;     if (holdTime < SHORT_PRESS_THRESHOLD) {
+;         Send("#" . Chr(32))
+;     }
+;     ; If it was a long press, the normal LShift behavior already happened
+; }
+
+; Map CapsLock to Win+Space (input method switcher)
+CapsLock::{
     UpdateLastInputTime()
-    
-    ; Calculate how long LShift was held
-    holdTime := A_TickCount - LShiftPressTime
-    
-    ; If it was a short press, trigger Win+Space
-    if (holdTime < SHORT_PRESS_THRESHOLD) {
-        Send("#" . Chr(32))
-    }
-    ; If it was a long press, the normal LShift behavior already happened
+    Send("#" . Chr(32))
 }
 
 ; Map F15 to Left Ctrl+Left Alt+Left Shift+`
